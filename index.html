@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bryan Imports Elite</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header class="header">
+    <div class="container topbar">
+      <div class="logo-area">
+        <h1>Bryan Imports</h1>
+        <p>Moda premium com experiência profissional</p>
+      </div>
+
+      <nav class="nav">
+        <a href="#produtos">Produtos</a>
+        <a href="#beneficios">Benefícios</a>
+        <button type="button" class="ghost-btn" onclick="abrirModalAuth()">Entrar</button>
+        <button type="button" class="cart-top-btn" onclick="rolarCarrinho()">
+          🛒 Carrinho <span id="cart-badge">0</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="container hero-content">
+      <span class="hero-tag">Nova experiência</span>
+      <h2>Sua loja com login, carrinho e visual muito mais forte</h2>
+      <p>Uma base moderna para vender melhor, testar em qualquer dispositivo e depois conectar com sua API real.</p>
+      <div class="hero-actions">
+        <button type="button" class="primary-btn" onclick="document.getElementById('produtos').scrollIntoView({ behavior: 'smooth' })">Ver coleção</button>
+        <button type="button" class="secondary-btn" onclick="abrirModalAuth()">Criar conta</button>
+      </div>
+    </div>
+  </section>
+
+   <div id="user-info" class="container user-info"></div>
+
+  <section class="section" id="beneficios">
+    <div class="container">
+      <div class="section-head">
+        <h2>Por que essa versão está melhor</h2>
+        <p>Mais profissional, mais organizada e muito mais agradável para o cliente.</p>
+      </div>
+
+      <div class="benefits-grid">
+        <article class="benefit-card">
+          <h3>Login elegante</h3>
+          <p>Cadastro e login funcionando no navegador, com troca de interface automática.</p>
+        </article>
+        <article class="benefit-card">
+          <h3>Busca e filtro</h3>
+          <p>O cliente encontra produtos mais rápido sem precisar rolar tudo.</p>
+        </article>
+        <article class="benefit-card">
+          <h3>Carrinho melhor</h3>
+          <p>Com contador, resumo, quantidade e valor total atualizado em tempo real.</p>
+        </article>
+        <article class="benefit-card">
+          <h3>Pronto para crescer</h3>
+          <p>Depois dá para ligar no backend e transformar isso em loja real.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section products-section" id="produtos">
+    <div class="container">
+      <div class="section-head">
+        <h2>Produtos</h2>
+        <p>Pesquise, filtre e adicione ao carrinho.</p>
+      </div>
+
+      <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="Buscar produto..." oninput="aplicarFiltros()">
+        <select id="priceFilter" onchange="aplicarFiltros()">
+          <option value="all">Todos os preços</option>
+          <option value="0-100">Até R$ 100</option>
+          <option value="100-200">R$ 100 a R$ 200</option>
+          <option value="200-9999">Acima de R$ 200</option>
+        </select>
+      </div>
+
+      <div class="layout">
+        <div class="products-grid" id="products-list"></div>
+
+        <aside class="cart-panel" id="carrinho">
+          <div class="cart-header">
+            <h3>🛒 Seu carrinho</h3>
+            <span id="cart-count-text">0 itens</span>
+          </div>
+
+          <div id="cart-items" class="empty-text">Seu carrinho está vazio.</div>
+
+          <div class="cart-summary">
+            <div class="summary-line">
+              <span>Subtotal</span>
+              <strong id="cart-subtotal">R$ 0,00</strong>
+            </div>
+            <div class="summary-line">
+              <span>Total</span>
+              <strong id="cart-total">R$ 0,00</strong>
+            </div>
+          </div>
+
+          <div class="cart-actions">
+            <button type="button" class="light-btn" onclick="limparCarrinho()">Limpar</button>
+            <button type="button" class="dark-btn" onclick="abrirCheckout()">Finalizar</button>
+          </div>
+
+          <div class="message" id="cart-message"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <div class="modal-bg" id="authModal">
+    <div class="modal">
+      <div class="modal-top">
+        <h3>Acesso</h3>
+        <button type="button" class="close-btn" onclick="fecharModalAuth()">✕</button>
+      </div>
+
+      <div class="tabs">
+        <button type="button" id="tabLogin" class="tab-active" onclick="trocarAba('login')">Login</button>
+        <button type="button" id="tabCadastro" class="tab-inactive" onclick="trocarAba('cadastro')">Cadastro</button>
+      </div>
+
+      <div id="loginForm">
+        <div class="form-grid">
+          <input type="email" id="loginEmail" placeholder="Seu email">
+          <input type="password" id="loginSenha" placeholder="Sua senha">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="light-btn" onclick="fecharModalAuth()">Fechar</button>
+          <button type="button" class="dark-btn" onclick="fazerLogin()">Entrar</button>
+        </div>
+      </div>
+
+      <div id="cadastroForm" class="hidden">
+        <div class="form-grid">
+          <input type="text" id="cadNome" placeholder="Seu nome">
+          <input type="email" id="cadEmail" placeholder="Seu email">
+          <input type="password" id="cadSenha" placeholder="Crie uma senha">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="light-btn" onclick="fecharModalAuth()">Fechar</button>
+          <button type="button" class="dark-btn" onclick="fazerCadastro()">Cadastrar</button>
+        </div>
+      </div>
+
+      <div class="message" id="authMessage"></div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="checkoutModal">
+    <div class="modal">
+      <div class="modal-top">
+        <h3>Resumo do pedido</h3>
+        <button type="button" class="close-btn" onclick="fecharCheckout()">✕</button>
+      </div>
+
+      <div id="checkout-items" class="checkout-items"></div>
+
+      <div class="checkout-total">
+        Total do pedido: <strong id="checkout-total">R$ 0,00</strong>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="light-btn" onclick="fecharCheckout()">Voltar</button>
+        <button type="button" class="dark-btn" onclick="finalizarCompra()">Confirmar compra</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>© 2026 Bryan Imports - Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
