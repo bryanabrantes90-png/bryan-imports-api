@@ -1,14 +1,21 @@
 import jwt from "jsonwebtoken";
-import Usuario from "../models/Usuario.js";
 
-export default async (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-  if (!token) return res.status(401).json({ message: "Token não informado" });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Token não informado" });
+  }
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const token = authHeader.split(" ")[1];
 
-  req.usuario = await Usuario.findById(decoded.id);
-
-  next();
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.usuario = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Token inválido" });
+  }
 };
+
+export default authMiddleware;

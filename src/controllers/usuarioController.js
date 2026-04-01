@@ -1,44 +1,66 @@
+import bcrypt from "bcryptjs";
 import Usuario from "../models/Usuario.js";
 
-export const toggleFavorito = async (req, res) => {
+export const listarUsuarios = async (req, res) => {
   try {
-    const { produtoId } = req.body;
-
-    if (!produtoId) {
-      return res.status(400).json({ message: "Produto não informado" });
-    }
-
-    const usuario = await Usuario.findById(req.usuario._id);
-
-    const jaExiste = usuario.favoritos.some(
-      (id) => String(id) === String(produtoId)
-    );
-
-    if (jaExiste) {
-      usuario.favoritos = usuario.favoritos.filter(
-        (id) => String(id) !== String(produtoId)
-      );
-    } else {
-      usuario.favoritos.push(produtoId);
-    }
-
-    await usuario.save();
-
-    return res.status(200).json({
-      message: "Favoritos atualizados",
-      favoritos: usuario.favoritos
-    });
+    const usuarios = await Usuario.find().select("-senha").sort({ createdAt: -1 });
+    res.status(200).json(usuarios);
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao atualizar favoritos" });
+    res.status(500).json({ message: error.message });
   }
 };
 
-export const listarFavoritos = async (req, res) => {
+export const criarUsuario = async (req, res) => {
   try {
-    const usuario = await Usuario.findById(req.usuario._id).populate("favoritos");
+    const { nome, email, senha, isAdmin } = req.body;
 
-    return res.status(200).json(usuario.favoritos);
+    if (!nome || !email || !senha) {
+      return res.status(400).json({
+        message: "Nome, email e senha são obrigatórios"
+      });
+    }
+
+    const usuarioExistente = await Usuario.findOne({ email });
+
+    if (usuarioExistente) {
+      return res.status(400).json({
+        message: "Já existe um usuário com esse email"
+      });
+    }
+
+    const senhaCriptografada = await bcrypt.hash(senha, 10);
+
+    const novoUsuario = await Usuario.create({
+      nome,
+      email,
+      senha: senhaCriptografada,
+      isAdmin: isAdmin || false
+    });
+
+    res.status(201).json({
+      message: "Usuário cadastrado com sucesso",
+      usuario: {
+        id: novoUsuario._id,
+        nome: novoUsuario.nome,
+        email: novoUsuario.email,
+        isAdmin: novoUsuario.isAdmin
+      }
+    });
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao listar favoritos" });
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deletarUsuario = async (req, res) => {
+  try {
+    const usuario = await Usuario.findByIdAndDelete(req.params.id);
+
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    res.status(200).json({ message: "Usuário removido com sucesso" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Bryan Imports</title>
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+  <main class="login-container">
+    <section class="login-box">
+      <h1>Entrar</h1>
+
+      <form id="loginForm" class="form-grid">
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="password" id="senha" placeholder="Senha" required />
+        <button type="submit">Entrar</button>
+      </form>
+
+      <p id="mensagem" class="mensagem"></p>
+
+      <hr />
+
+      <h2>Criar conta</h2>
+
+      <form id="cadastroForm" class="form-grid">
+        <input type="text" id="nomeCadastro" placeholder="Nome" required />
+        <input type="email" id="emailCadastro" placeholder="Email" required />
+        <input type="password" id="senhaCadastro" placeholder="Senha" required />
+        <button type="submit">Criar conta</button>
+      </form>
+
+      <p class="links">
+        <a href="/index.html">Ir para loja</a>
+      </p>
+    </section>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background: #0b1220; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.login-container { width: 100%; max-width: 480px; padding: 20px; }
+.login-box { background: #111827; border: 1px solid #334155; border-radius: 16px; padding: 24px; }
+.form-grid { display: grid; gap: 12px; margin-top: 12px; }
+input, button { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: white; }
+button { background: #2563eb; border: none; cursor: pointer; }
+.mensagem { margin: 12px 0; color: #93c5fd; }
+hr { margin: 20px 0; border-color: #334155; }
+.links { margin-top: 16px; }
+.links a { color: white; }

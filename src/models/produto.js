@@ -1,23 +1,29 @@
 import mongoose from "mongoose";
 
-const avaliacaoSchema = new mongoose.Schema(
+const produtoSchema = new mongoose.Schema(
   {
-    usuario: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Usuario",
-      required: true
-    },
     nome: {
       type: String,
-      required: true
+      required: [true, "O nome do produto é obrigatório"]
     },
-    estrelas: {
+    descricao: {
+      type: String,
+      default: ""
+    },
+    preco: {
       type: Number,
-      required: true,
-      min: 1,
-      max: 5
+      required: [true, "O preço é obrigatório"],
+      min: [0, "O preço não pode ser negativo"]
     },
-    comentario: {
+    categoria: {
+      type: String,
+      required: [true, "A categoria é obrigatória"]
+    },
+    estoque: {
+      type: Number,
+      default: 0
+    },
+    imagem: {
       type: String,
       default: ""
     }
@@ -25,34 +31,6 @@ const avaliacaoSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const produtoSchema = new mongoose.Schema(
-  {
-    nome: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    preco: {
-      type: Number,
-      required: true,
-      min: [0, "O preço não pode ser negativo"]
-    },
-    imagem: {
-      type: String,
-      required: true
-    },
-    descricao: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    avaliacoes: [avaliacaoSchema]
-  },
-  {
-    timestamps: true
-  }
-);
-
-const Produto = mongoose.models.Produto || mongoose.model("Produto", produtoSchema);
+const Produto = mongoose.model("Produto", produtoSchema);
 
 export default Produto;

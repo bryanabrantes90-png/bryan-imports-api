@@ -4,37 +4,25 @@ const usuarioSchema = new mongoose.Schema(
   {
     nome: {
       type: String,
-      required: true,
-      trim: true
+      required: [true, "O nome é obrigatório"]
     },
     email: {
       type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      lowercase: true
+      required: [true, "O email é obrigatório"],
+      unique: true
     },
     senha: {
       type: String,
-      required: true
+      required: [true, "A senha é obrigatória"]
     },
-    role: {
-      type: String,
-      enum: ["cliente", "admin"],
-      default: "cliente"
-    },
-    favoritos: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Produto"
-      }
-    ]
+    isAdmin: {
+      type: Boolean,
+      default: false
+    }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
-const Usuario = mongoose.models.Usuario || mongoose.model("Usuario", usuarioSchema);
+const Usuario = mongoose.model("Usuario", usuarioSchema);
 
 export default Usuario;

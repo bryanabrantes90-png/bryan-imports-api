@@ -1,92 +1,166 @@
 import Produto from "../models/Produto.js";
+import fs from "fs";
+import path from "path";
 
-export const listarProdutos = async (req, res) => {
-  try {
-    const produtos = await Produto.find().sort({ createdAt: -1 });
-    return res.status(200).json(produtos);
-  } catch (error) {
-    return res.status(500).json({ message: "Erro ao buscar produtos" });
+const removerImagemLocal = (imagemPath) => {
+  if (!imagemPath) return;
+  if (!imagemPath.startsWith("/uploads/")) return;
+
+  const caminhoCompleto = path.resolve("public", imagemPath.replace(/^\//, ""));
+
+  if (fs.existsSync(caminhoCompleto)) {
+    fs.unlinkSync(caminhoCompleto);
   }
 };
 
 export const criarProduto = async (req, res) => {
   try {
-    const { nome, preco, imagem, descricao } = req.body;
+    const { nome, descricao, preco, categoria, estoque, imagemUrl } = req.body;
 
-    if (!nome || preco === undefined || !imagem || !descricao) {
-      return res.status(400).json({ message: "Preencha todos os campos do produto" });
+    if (!nome || preco === undefined || !categoria) {
+      return res.status(400).json({
+        message: "Nome, preço e categoria são obrigatórios"
+      });
     }
 
-    const produto = await Produto.create({
+    if (Number(preco) < 0) {
+      return res.status(400).json({
+        message: "O preço não pode ser negativo"
+      });
+    }
+
+    let imagem = "";
+
+    if (req.file) {
+      imagem = `/uploads/${req.file.filename}`;
+    } else if (imagemUrl) {
+      imagem = imagemUrl;
+    }
+
+    const novoProduto = await Produto.create({
       nome,
-      preco,
-      imagem,
-      descricao
+      descricao,
+      preco: Number(preco),
+      categoria,
+      estoque: Number(estoque || 0),
+      imagem
     });
 
-    return res.status(201).json(produto);
+    res.status(201).json({
+      message: "Produto cadastrado com sucesso",
+      produto: novoProduto
+    });
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao criar produto" });
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const listarProdutos = async (req, res) => {
+  try {
+    const filtro = {};
+    const { nome, categoria } = req.query;
+
+    if (nome) {
+      filtro.nome = { $regex: nome, $options: "i" };
+    }
+
+    if (categoria) {
+      filtro.categoria = categoria;
+    }
+
+    const produtos = await Produto.find(filtro).sort({ createdAt: -1 });
+    res.status(200).json(produtos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const buscarProdutoPorId = async (req, res) => {
+  try {
+    const produto = await Produto.findById(req.params.id);
+
+    if (!produto) {
+      return res.status(404).json({ message: "Produto não encontrado" });
+    }
+
+    res.status(200).json(produto);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const atualizarProduto = async (req, res) => {
+  try {
+    const {
+      nome,
+      descricao,
+      preco,
+      categoria,
+      estoque,
+      imagemUrl,
+      removerImagem
+    } = req.body;
+
+    if (preco !== undefined && Number(preco) < 0) {
+      return res.status(400).json({
+        message: "O preço não pode ser negativo"
+      });
+    }
+
+    const produto = await Produto.findById(req.params.id);
+
+    if (!produto) {
+      return res.status(404).json({ message: "Produto não encontrado" });
+    }
+
+    produto.nome = nome ?? produto.nome;
+    produto.descricao = descricao ?? produto.descricao;
+    produto.preco = preco !== undefined ? Number(preco) : produto.preco;
+    produto.categoria = categoria ?? produto.categoria;
+    produto.estoque = estoque !== undefined ? Number(estoque) : produto.estoque;
+
+    if (removerImagem === "true") {
+      removerImagemLocal(produto.imagem);
+      produto.imagem = "";
+    }
+
+    if (req.file) {
+      removerImagemLocal(produto.imagem);
+      produto.imagem = `/uploads/${req.file.filename}`;
+    } else if (imagemUrl !== undefined && imagemUrl !== "") {
+      if (imagemUrl !== produto.imagem) {
+        removerImagemLocal(produto.imagem);
+        produto.imagem = imagemUrl;
+      }
+    } else if (imagemUrl === "" && removerImagem !== "true" && !req.file) {
+      if (!produto.imagem?.startsWith("/uploads/")) {
+        produto.imagem = "";
+      }
+    }
+
+    await produto.save();
+
+    res.status(200).json({
+      message: "Produto atualizado com sucesso",
+      produto
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
 export const deletarProduto = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const produto = await Produto.findById(id);
+    const produto = await Produto.findByIdAndDelete(req.params.id);
 
     if (!produto) {
       return res.status(404).json({ message: "Produto não encontrado" });
     }
 
-    await Produto.findByIdAndDelete(id);
+    removerImagemLocal(produto.imagem);
 
-    return res.status(200).json({ message: "Produto removido com sucesso" });
+    res.status(200).json({ message: "Produto removido com sucesso" });
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao remover produto" });
-  }
-};
-
-export const avaliarProduto = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { estrelas, comentario } = req.body;
-
-    if (!estrelas || estrelas < 1 || estrelas > 5) {
-      return res.status(400).json({ message: "Avaliação deve ser entre 1 e 5 estrelas" });
-    }
-
-    const produto = await Produto.findById(id);
-
-    if (!produto) {
-      return res.status(404).json({ message: "Produto não encontrado" });
-    }
-
-    const avaliacaoExistente = produto.avaliacoes.find(
-      (a) => String(a.usuario) === String(req.usuario._id)
-    );
-
-    if (avaliacaoExistente) {
-      avaliacaoExistente.estrelas = estrelas;
-      avaliacaoExistente.comentario = comentario || "";
-      avaliacaoExistente.nome = req.usuario.nome;
-    } else {
-      produto.avaliacoes.push({
-        usuario: req.usuario._id,
-        nome: req.usuario.nome,
-        estrelas,
-        comentario: comentario || ""
-      });
-    }
-
-    await produto.save();
-
-    return res.status(200).json({
-      message: "Avaliação enviada com sucesso",
-      produto
-    });
-  } catch (error) {
-    return res.status(500).json({ message: "Erro ao avaliar produto" });
+    res.status(500).json({ message: error.message });
   }
 };

@@ -1,101 +1,116 @@
 import Pedido from "../models/Pedido.js";
+import Produto from "../models/Produto.js";
 
 export const criarPedido = async (req, res) => {
   try {
-    const { itens, total } = req.body;
+    const { produtos, endereco, telefone } = req.body;
 
-    if (!itens || !Array.isArray(itens) || itens.length === 0) {
-      return res.status(400).json({ message: "Pedido sem itens" });
+    if (!produtos || !Array.isArray(produtos) || produtos.length === 0) {
+      return res.status(400).json({
+        message: "Informe os produtos do pedido"
+      });
     }
 
-    if (!total || total <= 0) {
-      return res.status(400).json({ message: "Total inválido" });
+    if (!endereco || !telefone) {
+      return res.status(400).json({
+        message: "Endereço e telefone são obrigatórios"
+      });
     }
 
-    const pedido = await Pedido.create({
-      usuario: req.usuario._id,
-      itens,
-      total
+    let total = 0;
+    const produtosValidados = [];
+
+    for (const item of produtos) {
+      const produtoEncontrado = await Produto.findById(item.produto);
+
+      if (!produtoEncontrado) {
+        return res.status(404).json({
+          message: `Produto não encontrado: ${item.produto}`
+        });
+      }
+
+      const quantidade = Number(item.quantidade);
+
+      if (quantidade <= 0) {
+        return res.status(400).json({
+          message: "A quantidade deve ser maior que 0"
+        });
+      }
+
+      total += produtoEncontrado.preco * quantidade;
+
+      produtosValidados.push({
+        produto: produtoEncontrado._id,
+        quantidade
+      });
+    }
+
+    const novoPedido = await Pedido.create({
+      usuario: req.usuario.id,
+      produtos: produtosValidados,
+      total,
+      endereco,
+      telefone
     });
 
-    return res.status(201).json({
+    const pedidoCompleto = await Pedido.findById(novoPedido._id)
+      .populate("usuario", "nome email")
+      .populate("produtos.produto", "nome preco categoria imagem");
+
+    res.status(201).json({
       message: "Pedido criado com sucesso",
-      pedido
+      pedido: pedidoCompleto
     });
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao criar pedido" });
+    res.status(500).json({ message: error.message });
   }
 };
 
 export const listarPedidos = async (req, res) => {
   try {
-    const pedidos = await Pedido.find()
+    const filtro = req.usuario.isAdmin ? {} : { usuario: req.usuario.id };
+
+    const pedidos = await Pedido.find(filtro)
       .populate("usuario", "nome email")
+      .populate("produtos.produto", "nome preco categoria imagem")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json(pedidos);
+    res.status(200).json(pedidos);
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao listar pedidos" });
+    res.status(500).json({ message: error.message });
   }
 };
 
 export const atualizarStatusPedido = async (req, res) => {
   try {
-    const { id } = req.params;
     const { status } = req.body;
 
-    const statusValidos = ["pendente", "pago", "enviado", "entregue"];
-    if (!statusValidos.includes(status)) {
-      return res.status(400).json({ message: "Status inválido" });
+    const statusPermitidos = ["pendente", "aprovado", "enviado", "entregue"];
+
+    if (!statusPermitidos.includes(status)) {
+      return res.status(400).json({
+        message: "Status inválido"
+      });
     }
 
-    const pedido = await Pedido.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
+    const pedido = await Pedido.findById(req.params.id);
 
     if (!pedido) {
       return res.status(404).json({ message: "Pedido não encontrado" });
     }
 
-    return res.status(200).json({
-      message: "Status atualizado com sucesso",
-      pedido
+    pedido.status = status;
+    await pedido.save();
+
+    const pedidoAtualizado = await Pedido.findById(pedido._id)
+      .populate("usuario", "nome email")
+      .populate("produtos.produto", "nome preco categoria imagem");
+
+    res.status(200).json({
+      message: "Status do pedido atualizado com sucesso",
+      pedido: pedidoAtualizado
     });
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao atualizar pedido" });
-  }
-};
-
-export const listarMeusPedidos = async (req, res) => {
-  try {
-    const pedidos = await Pedido.find({ usuario: req.usuario._id }).sort({ createdAt: -1 });
-
-    return res.status(200).json(pedidos);
-  } catch (error) {
-    return res.status(500).json({ message: "Erro ao listar seus pedidos" });
-  }
-};
-
-export const dashboardAdmin = async (req, res) => {
-  try {
-    const pedidos = await Pedido.find();
-    const totalPedidos = pedidos.length;
-    const faturamento = pedidos.reduce((soma, pedido) => soma + pedido.total, 0);
-
-    const pendentes = pedidos.filter((p) => p.status === "pendente").length;
-    const enviados = pedidos.filter((p) => p.status === "enviado").length;
-    const entregues = pedidos.filter((p) => p.status === "entregue").length;
-
-    return res.status(200).json({
-      totalPedidos,
-      faturamento,
-      pendentes,
-      enviados,
-      entregues
-    });
-  } catch (error) {
-    return res.status(500).json({ message: "Erro ao carregar dashboard" });
+    res.status(500).json({ message: error.message });
   }
 };

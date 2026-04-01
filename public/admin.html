@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Bryan Imports</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header class="topo">
+    <div>
+      <h1>Painel Admin</h1>
+      <p id="usuarioLogado">Carregando...</p>
+    </div>
+    <div class="acoes-topo">
+      <a href="/index.html">Loja</a>
+      <button onclick="logout()">Sair</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="dashboard">
+      <div class="info-card">
+        <h3>Total de Produtos</h3>
+        <strong id="totalProdutos">0</strong>
+      </div>
+      <div class="info-card">
+        <h3>Total de Clientes</h3>
+        <strong id="totalUsuarios">0</strong>
+      </div>
+      <div class="info-card">
+        <h3>Total de Pedidos</h3>
+        <strong id="totalPedidos">0</strong>
+      </div>
+      <div class="info-card">
+        <h3>Faturamento</h3>
+        <strong id="faturamentoTotal">R$ 0,00</strong>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <section class="card">
+        <h2>Gráfico de Pedidos por Status</h2>
+        <div class="grafico-box">
+          <canvas id="graficoPedidosStatus"></canvas>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Gráfico de Produtos por Categoria</h2>
+        <div class="grafico-box">
+          <canvas id="graficoProdutosCategoria"></canvas>
+        </div>
+      </section>
+    </section>
+
+    <section class="grid-2">
+      <section class="card">
+        <h2>Cadastrar Produto</h2>
+        <form id="produtoForm" class="form-grid" enctype="multipart/form-data">
+          <input type="text" id="produtoNome" placeholder="Nome" required />
+          <input type="text" id="produtoDescricao" placeholder="Descrição" />
+          <input type="number" id="produtoPreco" placeholder="Preço" step="0.01" required />
+          <input type="text" id="produtoCategoria" placeholder="Categoria" required />
+          <input type="number" id="produtoEstoque" placeholder="Estoque" />
+          <input type="file" id="produtoImagemArquivo" accept="image/*" />
+          <div class="preview-box">
+            <img id="previewCadastro" class="preview-imagem oculto" alt="Preview da imagem" />
+          </div>
+          <input type="text" id="produtoImagemUrl" placeholder="Ou URL da imagem" />
+          <button type="submit">Cadastrar produto</button>
+        </form>
+        <p id="produtoMensagem" class="mensagem"></p>
+      </section>
+
+      <section class="card">
+        <h2>Cadastrar Cliente</h2>
+        <form id="usuarioForm" class="form-grid">
+          <input type="text" id="usuarioNome" placeholder="Nome" required />
+          <input type="email" id="usuarioEmail" placeholder="Email" required />
+          <input type="password" id="usuarioSenha" placeholder="Senha" required />
+          <label class="checkbox">
+            <input type="checkbox" id="usuarioAdmin" />
+            É admin
+          </label>
+          <button type="submit">Cadastrar cliente</button>
+        </form>
+        <p id="usuarioMensagem" class="mensagem"></p>
+      </section>
+    </section>
+
+    <section class="grid-2">
+      <section class="card">
+        <div class="titulo-linha">
+          <h2>Produtos</h2>
+          <button onclick="listarProdutos()">Atualizar</button>
+        </div>
+        <div id="listaProdutos" class="lista"></div>
+      </section>
+
+      <section class="card">
+        <div class="titulo-linha">
+          <h2>Pedidos</h2>
+          <button onclick="listarPedidos()">Atualizar</button>
+        </div>
+        <div id="listaPedidos" class="lista"></div>
+      </section>
+    </section>
+
+    <section class="card">
+      <div class="titulo-linha">
+        <h2>Clientes</h2>
+        <button onclick="listarUsuarios()">Atualizar</button>
+      </div>
+      <div id="listaUsuarios" class="lista"></div>
+    </section>
+  </main>
+
+  <div id="modalProduto" class="modal oculto">
+    <div class="modal-conteudo">
+      <div class="titulo-linha">
+        <h2>Editar Produto</h2>
+        <button class="btn-danger" onclick="fecharModalProduto()">Fechar</button>
+      </div>
+
+      <form id="editarProdutoForm" class="form-grid" enctype="multipart/form-data">
+        <input type="hidden" id="editProdutoId" />
+
+        <input type="text" id="editProdutoNome" placeholder="Nome" required />
+        <input type="text" id="editProdutoDescricao" placeholder="Descrição" />
+        <input type="number" id="editProdutoPreco" placeholder="Preço" step="0.01" required />
+        <input type="text" id="editProdutoCategoria" placeholder="Categoria" required />
+        <input type="number" id="editProdutoEstoque" placeholder="Estoque" />
+        <input type="file" id="editProdutoImagemArquivo" accept="image/*" />
+
+        <div class="preview-box">
+          <img id="previewEdicao" class="preview-imagem oculto" alt="Preview da imagem" />
+        </div>
+
+        <input type="text" id="editProdutoImagemUrl" placeholder="Ou URL da imagem" />
+
+        <label class="checkbox">
+          <input type="checkbox" id="editRemoverImagem" />
+          Remover imagem atual
+        </label>
+
+        <button type="submit">Salvar alterações</button>
+      </form>
+
+      <p id="editProdutoMensagem" class="mensagem"></p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
