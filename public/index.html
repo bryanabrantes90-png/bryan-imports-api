@@ -3,64 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bryan Imports - Loja</title>
-  <link rel="stylesheet" href="loja.css" />
+  <title>Bryan Imports</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topo">
-    <div>
+    <div class="container topo-conteudo">
       <h1>Bryan Imports</h1>
-      <p>Sua loja online</p>
+      <nav class="menu">
+        <a href="index.html">Loja</a>
+        <a href="login.html">Login</a>
+        <a href="admin.html">Admin</a>
+      </nav>
     </div>
-    <nav class="nav">
-      <a href="/login.html">Login</a>
-      <a href="/admin.html">Admin</a>
-    </nav>
   </header>
 
   <main class="container">
-    <section class="filtros">
-      <input type="text" id="buscaNome" placeholder="Buscar por nome" oninput="listarProdutos()" />
-      <select id="filtroCategoria" onchange="listarProdutos()">
-        <option value="">Todas as categorias</option>
-        <option value="Roupas">Roupas</option>
-        <option value="Tênis">Tênis</option>
-        <option value="Acessórios">Acessórios</option>
-      </select>
+    <section class="hero">
+      <h2>Bem-vindo à loja</h2>
+      <p>Produtos organizados para celular, tablet e computador.</p>
     </section>
 
-    <section id="listaProdutos" class="produtos-grid"></section>
-
-    <section class="grid-2">
-      <section class="card">
-        <div class="titulo-linha">
-          <h2>Carrinho</h2>
-          <button onclick="limparCarrinho()">Limpar</button>
-        </div>
-        <div id="listaCarrinho" class="lista"></div>
-        <div class="resumo">
-          <p><strong>Total:</strong> <span id="totalCarrinho">R$ 0,00</span></p>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Finalizar Pedido</h2>
-        <form id="pedidoForm" class="form-grid">
-          <input type="text" id="endereco" placeholder="Endereço completo" required />
-          <input type="text" id="telefone" placeholder="Telefone" required />
-          <button type="submit">Finalizar pedido</button>
-        </form>
-        <p id="pedidoMensagem" class="mensagem"></p>
-
-        <div class="titulo-linha espaco-topo">
-          <h2>Meus pedidos</h2>
-          <button onclick="listarPedidos()">Atualizar</button>
-        </div>
-        <div id="listaPedidos" class="lista"></div>
-      </section>
+    <section>
+      <h2 class="titulo-secao">Produtos</h2>
+      <div id="lista-produtos" class="grid-produtos"></div>
     </section>
   </main>
 
-  <script src="loja.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

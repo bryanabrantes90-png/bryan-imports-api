@@ -7,33 +7,23 @@
   <link rel="stylesheet" href="login.css" />
 </head>
 <body>
-  <main class="login-container">
-    <section class="login-box">
+  <main class="login-page">
+    <div class="login-box">
       <h1>Entrar</h1>
+      <p>Faça login para acessar o painel admin.</p>
 
-      <form id="loginForm" class="form-grid">
-        <input type="email" id="email" placeholder="Email" required />
-        <input type="password" id="senha" placeholder="Senha" required />
+      <form id="login-form">
+        <input type="email" id="email" placeholder="Seu e-mail" required />
+        <input type="password" id="senha" placeholder="Sua senha" required />
         <button type="submit">Entrar</button>
       </form>
 
-      <p id="mensagem" class="mensagem"></p>
+      <p id="mensagem"></p>
 
-      <hr />
-
-      <h2>Criar conta</h2>
-
-      <form id="cadastroForm" class="form-grid">
-        <input type="text" id="nomeCadastro" placeholder="Nome" required />
-        <input type="email" id="emailCadastro" placeholder="Email" required />
-        <input type="password" id="senhaCadastro" placeholder="Senha" required />
-        <button type="submit">Criar conta</button>
-      </form>
-
-      <p class="links">
-        <a href="/index.html">Ir para loja</a>
-      </p>
-    </section>
+      <div class="voltar">
+        <a href="index.html">Voltar para loja</a>
+      </div>
+    </div>
   </main>
 
   <script src="login.js"></script>

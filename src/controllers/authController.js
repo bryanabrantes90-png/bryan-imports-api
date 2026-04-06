@@ -2,42 +2,52 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Usuario from "../models/Usuario.js";
 
+const gerarToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+};
+
 export const registrar = async (req, res) => {
   try {
-    const { nome, email, senha, isAdmin } = req.body;
+    const { nome, email, senha, tipo } = req.body;
 
     if (!nome || !email || !senha) {
       return res.status(400).json({
-        message: "Nome, email e senha são obrigatórios"
+        message: "Nome, e-mail e senha são obrigatórios"
       });
     }
 
-    const usuarioExistente = await Usuario.findOne({ email });
+    const usuarioExiste = await Usuario.findOne({ email });
 
-    if (usuarioExistente) {
-      return res.status(400).json({ message: "Usuário já cadastrado" });
+    if (usuarioExiste) {
+      return res.status(400).json({
+        message: "Já existe um usuário com este e-mail"
+      });
     }
 
-    const senhaCriptografada = await bcrypt.hash(senha, 10);
+    const senhaHash = await bcrypt.hash(senha, 10);
 
     const novoUsuario = await Usuario.create({
       nome,
       email,
-      senha: senhaCriptografada,
-      isAdmin: isAdmin || false
+      senha: senhaHash,
+      tipo: tipo === "admin" ? "admin" : "cliente"
     });
 
     res.status(201).json({
-      message: "Usuário cadastrado com sucesso",
+      message: "Usuário registrado com sucesso",
       usuario: {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
         email: novoUsuario.email,
-        isAdmin: novoUsuario.isAdmin
-      }
+        tipo: novoUsuario.tipo
+      },
+      token: gerarToken(novoUsuario._id)
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Erro ao registrar usuário",
+      error: error.message
+    });
   }
 };
 
@@ -47,43 +57,51 @@ export const login = async (req, res) => {
 
     if (!email || !senha) {
       return res.status(400).json({
-        message: "Email e senha são obrigatórios"
+        message: "E-mail e senha são obrigatórios"
       });
     }
 
     const usuario = await Usuario.findOne({ email });
 
     if (!usuario) {
-      return res.status(400).json({ message: "Email ou senha inválidos" });
+      return res.status(401).json({
+        message: "E-mail ou senha inválidos"
+      });
     }
 
     const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
 
     if (!senhaCorreta) {
-      return res.status(400).json({ message: "Email ou senha inválidos" });
+      return res.status(401).json({
+        message: "E-mail ou senha inválidos"
+      });
     }
-
-    const token = jwt.sign(
-      {
-        id: usuario._id,
-        email: usuario.email,
-        isAdmin: usuario.isAdmin
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
 
     res.status(200).json({
       message: "Login realizado com sucesso",
-      token,
+      token: gerarToken(usuario._id),
       usuario: {
         id: usuario._id,
         nome: usuario.nome,
         email: usuario.email,
-        isAdmin: usuario.isAdmin
+        tipo: usuario.tipo
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Erro ao realizar login",
+      error: error.message
+    });
+  }
+};
+
+export const perfil = async (req, res) => {
+  try {
+    res.status(200).json(req.usuario);
+  } catch (error) {
+    res.status(500).json({
+      message: "Erro ao buscar perfil",
+      error: error.message
+    });
   }
 };

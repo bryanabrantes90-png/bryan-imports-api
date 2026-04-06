@@ -1,429 +1,370 @@
-const token = localStorage.getItem("token") || "";
-const usuario = JSON.parse(localStorage.getItem("usuario")) || null;
+const token = localStorage.getItem("token");
 
-if (!token || !usuario?.isAdmin) {
-  window.location.href = "/login.html";
+if (!token) {
+  alert("Faça login primeiro.");
+  window.location.href = "login.html";
 }
 
-document.getElementById("usuarioLogado").textContent =
-  `Logado: ${usuario.nome} (${usuario.email})`;
+const produtoForm = document.getElementById("produto-form");
+const clienteForm = document.getElementById("cliente-form");
 
-let graficoPedidos = null;
-let graficoCategorias = null;
-let cacheProdutos = [];
-let cachePedidos = [];
-let imagemAtualProduto = "";
+const produtoIdInput = document.getElementById("produto-id");
+const nomeInput = document.getElementById("nome");
+const categoriaInput = document.getElementById("categoria");
+const descricaoInput = document.getElementById("descricao");
+const precoInput = document.getElementById("preco");
+const estoqueInput = document.getElementById("estoque");
+const imagemInput = document.getElementById("imagem");
+const arquivoImagemInput = document.getElementById("arquivo-imagem");
+const previewImagem = document.getElementById("preview-imagem");
 
-function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
+const produtoMsg = document.getElementById("produto-msg");
+const clienteMsg = document.getElementById("cliente-msg");
+
+const tabelaProdutos = document.getElementById("tabela-produtos");
+const tabelaClientes = document.getElementById("tabela-clientes");
+
+const btnSalvarProduto = document.getElementById("btn-salvar-produto");
+const btnCancelarEdicao = document.getElementById("btn-cancelar-edicao");
 
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("usuario");
-  localStorage.removeItem("carrinho");
-  window.location.href = "/login.html";
+  window.location.href = "login.html";
 }
 
-function definirPreview(imgId, src) {
-  const img = document.getElementById(imgId);
+function irParaLoja() {
+  window.location.href = "index.html";
+}
 
-  if (src) {
-    img.src = src;
-    img.classList.remove("oculto");
-  } else {
-    img.src = "";
-    img.classList.add("oculto");
+function mostrarMensagem(elemento, texto, cor = "green") {
+  elemento.textContent = texto;
+  elemento.style.color = cor;
+}
+
+function limparMensagem(elemento) {
+  elemento.textContent = "";
+}
+
+function montarUrlImagem(imagem) {
+  if (!imagem || imagem.trim() === "") {
+    return "https://via.placeholder.com/120x120?text=Sem+Imagem";
   }
+
+  const valor = imagem.trim();
+
+  if (valor.startsWith("http://") || valor.startsWith("https://")) {
+    return valor;
+  }
+
+  if (valor.startsWith("/uploads/")) {
+    return valor;
+  }
+
+  if (valor.startsWith("uploads/")) {
+    return `/${valor}`;
+  }
+
+  if (valor.startsWith("/")) {
+    return valor;
+  }
+
+  return valor;
 }
 
-function previewArquivo(inputId, previewId) {
-  const input = document.getElementById(inputId);
-  const arquivo = input.files[0];
+function setPreviewImagem(src) {
+  const url = montarUrlImagem(src);
 
+  if (!src || src.trim() === "") {
+    previewImagem.src = "";
+    previewImagem.classList.add("oculto");
+    return;
+  }
+
+  previewImagem.src = url;
+  previewImagem.classList.remove("oculto");
+}
+
+function limparFormularioProduto() {
+  produtoForm.reset();
+  produtoIdInput.value = "";
+  btnSalvarProduto.textContent = "Salvar Produto";
+  arquivoImagemInput.value = "";
+  setPreviewImagem("");
+  limparMensagem(produtoMsg);
+}
+
+async function fazerUploadImagem(arquivo) {
+  const formData = new FormData();
+  formData.append("imagem", arquivo);
+
+  const resposta = await fetch("/api/produtos/upload/imagem", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(dados.message || "Erro ao enviar imagem");
+  }
+
+  return dados.imagem;
+}
+
+arquivoImagemInput.addEventListener("change", async (event) => {
+  const arquivo = event.target.files[0];
   if (!arquivo) return;
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    definirPreview(previewId, e.target.result);
+  try {
+    mostrarMensagem(produtoMsg, "Enviando imagem...", "#374151");
+    const caminhoImagem = await fazerUploadImagem(arquivo);
+    imagemInput.value = caminhoImagem;
+    setPreviewImagem(caminhoImagem);
+    mostrarMensagem(produtoMsg, "Imagem enviada com sucesso!", "green");
+  } catch (error) {
+    mostrarMensagem(produtoMsg, error.message, "red");
+    console.error(error);
+  }
+});
+
+imagemInput.addEventListener("input", () => {
+  setPreviewImagem(imagemInput.value.trim());
+});
+
+btnCancelarEdicao.addEventListener("click", () => {
+  limparFormularioProduto();
+});
+
+async function carregarProdutos() {
+  try {
+    const resposta = await fetch("/api/produtos");
+    const produtos = await resposta.json();
+
+    tabelaProdutos.innerHTML = "";
+
+    if (!Array.isArray(produtos) || produtos.length === 0) {
+      tabelaProdutos.innerHTML = `
+        <tr>
+          <td colspan="6">Nenhum produto cadastrado.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    produtos.forEach((produto) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>
+          <img
+            src="${montarUrlImagem(produto.imagem)}"
+            alt="${produto.nome}"
+            class="thumb-tabela"
+            onerror="this.src='https://via.placeholder.com/120x120?text=Sem+Imagem'"
+          />
+        </td>
+        <td>${produto.nome}</td>
+        <td>${produto.categoria || "-"}</td>
+        <td>R$ ${Number(produto.preco).toFixed(2)}</td>
+        <td>${produto.estoque ?? 0}</td>
+        <td>
+          <div class="acoes-tabela">
+            <button class="btn-secundario" data-acao="editar">Editar</button>
+            <button class="btn-perigo" data-acao="excluir">Excluir</button>
+          </div>
+        </td>
+      `;
+
+      const btnEditar = tr.querySelector('[data-acao="editar"]');
+      const btnExcluir = tr.querySelector('[data-acao="excluir"]');
+
+      btnEditar.addEventListener("click", () => preencherFormularioEdicao(produto));
+      btnExcluir.addEventListener("click", () => excluirProduto(produto._id, produto.nome));
+
+      tabelaProdutos.appendChild(tr);
+    });
+  } catch (error) {
+    tabelaProdutos.innerHTML = `
+      <tr>
+        <td colspan="6">Erro ao carregar produtos.</td>
+      </tr>
+    `;
+    console.error(error);
+  }
+}
+
+function preencherFormularioEdicao(produto) {
+  produtoIdInput.value = produto._id;
+  nomeInput.value = produto.nome || "";
+  categoriaInput.value = produto.categoria || "";
+  descricaoInput.value = produto.descricao || "";
+  precoInput.value = produto.preco ?? "";
+  estoqueInput.value = produto.estoque ?? 0;
+  imagemInput.value = produto.imagem || "";
+  arquivoImagemInput.value = "";
+  setPreviewImagem(produto.imagem || "");
+  btnSalvarProduto.textContent = "Atualizar Produto";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  mostrarMensagem(produtoMsg, "Modo edição ativado.", "#374151");
+}
+
+async function excluirProduto(id, nome) {
+  const confirmar = confirm(`Deseja excluir o produto "${nome}"?`);
+  if (!confirmar) return;
+
+  try {
+    const resposta = await fetch(`/api/produtos/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      mostrarMensagem(produtoMsg, dados.message || "Erro ao excluir produto.", "red");
+      return;
+    }
+
+    mostrarMensagem(produtoMsg, "Produto excluído com sucesso!", "green");
+    carregarProdutos();
+    limparFormularioProduto();
+  } catch (error) {
+    mostrarMensagem(produtoMsg, "Erro ao conectar com o servidor.", "red");
+    console.error(error);
+  }
+}
+
+produtoForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const id = produtoIdInput.value.trim();
+
+  const payload = {
+    nome: nomeInput.value.trim(),
+    categoria: categoriaInput.value.trim(),
+    descricao: descricaoInput.value.trim(),
+    preco: Number(precoInput.value),
+    estoque: Number(estoqueInput.value),
+    imagem: imagemInput.value.trim()
   };
-  reader.readAsDataURL(arquivo);
-}
 
-document.getElementById("produtoImagemArquivo").addEventListener("change", () => {
-  previewArquivo("produtoImagemArquivo", "previewCadastro");
-});
+  try {
+    const url = id ? `/api/produtos/${id}` : "/api/produtos";
+    const metodo = id ? "PUT" : "POST";
 
-document.getElementById("produtoImagemUrl").addEventListener("input", (e) => {
-  const valor = e.target.value.trim();
-  definirPreview("previewCadastro", valor || "");
-});
+    const resposta = await fetch(url, {
+      method: metodo,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
 
-document.getElementById("editProdutoImagemArquivo").addEventListener("change", () => {
-  document.getElementById("editRemoverImagem").checked = false;
-  previewArquivo("editProdutoImagemArquivo", "previewEdicao");
-});
+    const dados = await resposta.json();
 
-document.getElementById("editProdutoImagemUrl").addEventListener("input", (e) => {
-  const valor = e.target.value.trim();
-  document.getElementById("editRemoverImagem").checked = false;
-  definirPreview("previewEdicao", valor || "");
-});
-
-document.getElementById("editRemoverImagem").addEventListener("change", (e) => {
-  if (e.target.checked) {
-    document.getElementById("editProdutoImagemArquivo").value = "";
-    document.getElementById("editProdutoImagemUrl").value = "";
-    definirPreview("previewEdicao", "");
-  } else {
-    if (imagemAtualProduto) {
-      definirPreview("previewEdicao", imagemAtualProduto);
+    if (!resposta.ok) {
+      mostrarMensagem(produtoMsg, dados.message || "Erro ao salvar produto.", "red");
+      return;
     }
+
+    mostrarMensagem(
+      produtoMsg,
+      id ? "Produto atualizado com sucesso!" : "Produto cadastrado com sucesso!",
+      "green"
+    );
+
+    limparFormularioProduto();
+    carregarProdutos();
+  } catch (error) {
+    mostrarMensagem(produtoMsg, "Erro ao conectar com o servidor.", "red");
+    console.error(error);
   }
 });
 
-function abrirModalProduto(produto) {
-  document.getElementById("editProdutoId").value = produto._id;
-  document.getElementById("editProdutoNome").value = produto.nome || "";
-  document.getElementById("editProdutoDescricao").value = produto.descricao || "";
-  document.getElementById("editProdutoPreco").value = produto.preco || 0;
-  document.getElementById("editProdutoCategoria").value = produto.categoria || "";
-  document.getElementById("editProdutoEstoque").value = produto.estoque || 0;
-  document.getElementById("editProdutoImagemUrl").value =
-    produto.imagem && !produto.imagem.startsWith("/uploads/") ? produto.imagem : "";
-  document.getElementById("editProdutoImagemArquivo").value = "";
-  document.getElementById("editRemoverImagem").checked = false;
-  document.getElementById("editProdutoMensagem").textContent = "";
+async function carregarClientes() {
+  try {
+    const resposta = await fetch("/api/usuarios", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
 
-  imagemAtualProduto = produto.imagem || "";
-  definirPreview("previewEdicao", imagemAtualProduto);
+    const clientes = await resposta.json();
 
-  document.getElementById("modalProduto").classList.remove("oculto");
+    tabelaClientes.innerHTML = "";
+
+    if (!Array.isArray(clientes) || clientes.length === 0) {
+      tabelaClientes.innerHTML = `
+        <tr>
+          <td colspan="3">Nenhum cliente encontrado.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    clientes.forEach((cliente) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${cliente.nome}</td>
+        <td>${cliente.email}</td>
+        <td>${cliente.tipo}</td>
+      `;
+
+      tabelaClientes.appendChild(tr);
+    });
+  } catch (error) {
+    tabelaClientes.innerHTML = `
+      <tr>
+        <td colspan="3">Erro ao carregar clientes.</td>
+      </tr>
+    `;
+    console.error(error);
+  }
 }
 
-function fecharModalProduto() {
-  document.getElementById("modalProduto").classList.add("oculto");
-}
+clienteForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-function atualizarGraficoPedidos(pedidos) {
-  const contagem = {
-    pendente: 0,
-    aprovado: 0,
-    enviado: 0,
-    entregue: 0
+  const payload = {
+    nome: document.getElementById("cliente-nome").value.trim(),
+    email: document.getElementById("cliente-email").value.trim(),
+    senha: document.getElementById("cliente-senha").value.trim(),
+    tipo: "cliente"
   };
 
-  pedidos.forEach((pedido) => {
-    if (contagem[pedido.status] !== undefined) {
-      contagem[pedido.status] += 1;
+  try {
+    const resposta = await fetch("/api/usuarios", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      mostrarMensagem(clienteMsg, dados.message || "Erro ao criar cliente.", "red");
+      return;
     }
-  });
 
-  const ctx = document.getElementById("graficoPedidosStatus");
-
-  if (graficoPedidos) graficoPedidos.destroy();
-
-  graficoPedidos = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: ["Pendente", "Aprovado", "Enviado", "Entregue"],
-      datasets: [
-        {
-          label: "Pedidos",
-          data: [
-            contagem.pendente,
-            contagem.aprovado,
-            contagem.enviado,
-            contagem.entregue
-          ]
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false
-    }
-  });
-}
-
-function atualizarGraficoCategorias(produtos) {
-  const categorias = {};
-
-  produtos.forEach((produto) => {
-    const categoria = produto.categoria || "Sem categoria";
-    categorias[categoria] = (categorias[categoria] || 0) + 1;
-  });
-
-  const ctx = document.getElementById("graficoProdutosCategoria");
-
-  if (graficoCategorias) graficoCategorias.destroy();
-
-  graficoCategorias = new Chart(ctx, {
-    type: "pie",
-    data: {
-      labels: Object.keys(categorias),
-      datasets: [
-        {
-          label: "Produtos",
-          data: Object.values(categorias)
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false
-    }
-  });
-}
-
-async function listarProdutos() {
-  const resposta = await fetch("/produtos");
-  const produtos = await resposta.json();
-  cacheProdutos = Array.isArray(produtos) ? produtos : [];
-
-  const lista = document.getElementById("listaProdutos");
-  const totalProdutos = document.getElementById("totalProdutos");
-
-  lista.innerHTML = "";
-  totalProdutos.textContent = cacheProdutos.length;
-
-  cacheProdutos.forEach((produto) => {
-    const imagemHtml = produto.imagem
-      ? `<p><strong>Imagem:</strong><br><img src="${produto.imagem}" alt="${produto.nome}" style="max-width:120px;margin-top:8px;border-radius:10px;"></p>`
-      : `<p><strong>Imagem:</strong> Sem imagem</p>`;
-
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <h3>${produto.nome}</h3>
-      <p><strong>Categoria:</strong> ${produto.categoria}</p>
-      <p><strong>Preço:</strong> ${formatarMoeda(produto.preco)}</p>
-      <p><strong>Estoque:</strong> ${produto.estoque}</p>
-      ${imagemHtml}
-      <div class="acoes">
-        <button onclick='abrirModalProduto(${JSON.stringify(produto).replace(/'/g, "&apos;")})'>Editar</button>
-        <button class="btn-danger" onclick="excluirProduto('${produto._id}')">Excluir</button>
-      </div>
-    `;
-    lista.appendChild(div);
-  });
-
-  atualizarGraficoCategorias(cacheProdutos);
-}
-
-async function listarUsuarios() {
-  const resposta = await fetch("/usuarios", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  const usuarios = await resposta.json();
-  const lista = document.getElementById("listaUsuarios");
-  const totalUsuarios = document.getElementById("totalUsuarios");
-
-  const dados = Array.isArray(usuarios) ? usuarios : [];
-  lista.innerHTML = "";
-  totalUsuarios.textContent = dados.length;
-
-  dados.forEach((usuarioItem) => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <h3>${usuarioItem.nome}</h3>
-      <p><strong>Email:</strong> ${usuarioItem.email}</p>
-      <p><strong>Admin:</strong> ${usuarioItem.isAdmin ? "Sim" : "Não"}</p>
-      <div class="acoes">
-        <button class="btn-danger" onclick="excluirUsuario('${usuarioItem._id}')">Excluir</button>
-      </div>
-    `;
-    lista.appendChild(div);
-  });
-}
-
-async function listarPedidos() {
-  const resposta = await fetch("/pedidos", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  const pedidos = await resposta.json();
-  cachePedidos = Array.isArray(pedidos) ? pedidos : [];
-
-  const lista = document.getElementById("listaPedidos");
-  const totalPedidos = document.getElementById("totalPedidos");
-  const faturamentoTotal = document.getElementById("faturamentoTotal");
-
-  lista.innerHTML = "";
-  totalPedidos.textContent = cachePedidos.length;
-
-  const total = cachePedidos.reduce((acc, pedido) => acc + Number(pedido.total || 0), 0);
-  faturamentoTotal.textContent = formatarMoeda(total);
-
-  cachePedidos.forEach((pedido) => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <h3>Pedido #${pedido._id.slice(-6)}</h3>
-      <p><strong>Cliente:</strong> ${pedido.usuario?.nome || "-"}</p>
-      <p><strong>Total:</strong> ${formatarMoeda(pedido.total)}</p>
-      <p><strong>Status:</strong> ${pedido.status}</p>
-      <p><strong>Endereço:</strong> ${pedido.endereco}</p>
-      <p><strong>Telefone:</strong> ${pedido.telefone}</p>
-      <div class="acoes">
-        <button class="btn-aviso" onclick="alterarStatus('${pedido._id}', 'aprovado')">Aprovar</button>
-        <button onclick="alterarStatus('${pedido._id}', 'enviado')">Enviar</button>
-        <button class="btn-secundario" onclick="alterarStatus('${pedido._id}', 'entregue')">Entregar</button>
-      </div>
-    `;
-    lista.appendChild(div);
-  });
-
-  atualizarGraficoPedidos(cachePedidos);
-}
-
-async function excluirProduto(id) {
-  await fetch(`/produtos/${id}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  await listarProdutos();
-}
-
-async function excluirUsuario(id) {
-  await fetch(`/usuarios/${id}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  await listarUsuarios();
-}
-
-async function alterarStatus(id, status) {
-  await fetch(`/pedidos/${id}/status`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ status })
-  });
-
-  await listarPedidos();
-}
-
-document.getElementById("produtoForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const formData = new FormData();
-  formData.append("nome", document.getElementById("produtoNome").value);
-  formData.append("descricao", document.getElementById("produtoDescricao").value);
-  formData.append("preco", document.getElementById("produtoPreco").value);
-  formData.append("categoria", document.getElementById("produtoCategoria").value);
-  formData.append("estoque", document.getElementById("produtoEstoque").value || 0);
-  formData.append("imagemUrl", document.getElementById("produtoImagemUrl").value);
-
-  const arquivo = document.getElementById("produtoImagemArquivo").files[0];
-  if (arquivo) {
-    formData.append("imagem", arquivo);
-  }
-
-  const resposta = await fetch("/produtos", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
-    body: formData
-  });
-
-  const dados = await resposta.json();
-  document.getElementById("produtoMensagem").textContent =
-    resposta.ok ? "Produto cadastrado com sucesso." : (dados.message || "Erro ao cadastrar produto");
-
-  if (resposta.ok) {
-    document.getElementById("produtoForm").reset();
-    definirPreview("previewCadastro", "");
-    await listarProdutos();
+    mostrarMensagem(clienteMsg, "Cliente criado com sucesso!", "green");
+    clienteForm.reset();
+    carregarClientes();
+  } catch (error) {
+    mostrarMensagem(clienteMsg, "Erro ao conectar com o servidor.", "red");
+    console.error(error);
   }
 });
 
-document.getElementById("usuarioForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const resposta = await fetch("/usuarios", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      nome: document.getElementById("usuarioNome").value,
-      email: document.getElementById("usuarioEmail").value,
-      senha: document.getElementById("usuarioSenha").value,
-      isAdmin: document.getElementById("usuarioAdmin").checked
-    })
-  });
-
-  const dados = await resposta.json();
-  document.getElementById("usuarioMensagem").textContent =
-    resposta.ok ? "Cliente cadastrado com sucesso." : (dados.message || "Erro ao cadastrar cliente");
-
-  if (resposta.ok) {
-    document.getElementById("usuarioForm").reset();
-    await listarUsuarios();
-  }
-});
-
-document.getElementById("editarProdutoForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const id = document.getElementById("editProdutoId").value;
-
-  const formData = new FormData();
-  formData.append("nome", document.getElementById("editProdutoNome").value);
-  formData.append("descricao", document.getElementById("editProdutoDescricao").value);
-  formData.append("preco", document.getElementById("editProdutoPreco").value);
-  formData.append("categoria", document.getElementById("editProdutoCategoria").value);
-  formData.append("estoque", document.getElementById("editProdutoEstoque").value || 0);
-  formData.append("imagemUrl", document.getElementById("editProdutoImagemUrl").value);
-  formData.append("removerImagem", document.getElementById("editRemoverImagem").checked);
-
-  const arquivo = document.getElementById("editProdutoImagemArquivo").files[0];
-  if (arquivo) {
-    formData.append("imagem", arquivo);
-  }
-
-  const resposta = await fetch(`/produtos/${id}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
-    body: formData
-  });
-
-  const dados = await resposta.json();
-  document.getElementById("editProdutoMensagem").textContent =
-    resposta.ok ? "Produto atualizado com sucesso." : (dados.message || "Erro ao atualizar produto");
-
-  if (resposta.ok) {
-    fecharModalProduto();
-    await listarProdutos();
-  }
-});
-
-listarProdutos();
-listarUsuarios();
-listarPedidos();
+carregarProdutos();
+carregarClientes();

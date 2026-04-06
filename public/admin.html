@@ -7,151 +7,144 @@
   <link rel="stylesheet" href="admin.css" />
 </head>
 <body>
-  <header class="topo">
-    <div>
+  <header class="topo-admin">
+    <div class="container topo-admin-conteudo">
       <h1>Painel Admin</h1>
-      <p id="usuarioLogado">Carregando...</p>
-    </div>
-    <div class="acoes-topo">
-      <a href="/index.html">Loja</a>
-      <button onclick="logout()">Sair</button>
+
+      <div class="topo-botoes">
+        <button class="btn-secundario" onclick="irParaLoja()">Ver Loja</button>
+        <button class="btn-perigo" onclick="logout()">Sair</button>
+      </div>
     </div>
   </header>
 
-  <main class="container">
-    <section class="dashboard">
-      <div class="info-card">
-        <h3>Total de Produtos</h3>
-        <strong id="totalProdutos">0</strong>
-      </div>
-      <div class="info-card">
-        <h3>Total de Clientes</h3>
-        <strong id="totalUsuarios">0</strong>
-      </div>
-      <div class="info-card">
-        <h3>Total de Pedidos</h3>
-        <strong id="totalPedidos">0</strong>
-      </div>
-      <div class="info-card">
-        <h3>Faturamento</h3>
-        <strong id="faturamentoTotal">R$ 0,00</strong>
-      </div>
-    </section>
+  <main class="container admin-layout">
+    <section class="card">
+      <h2>Cadastro de Produto</h2>
 
-    <section class="grid-2">
-      <section class="card">
-        <h2>Gráfico de Pedidos por Status</h2>
-        <div class="grafico-box">
-          <canvas id="graficoPedidosStatus"></canvas>
+      <form id="produto-form" class="grid-form">
+        <input type="hidden" id="produto-id" />
+
+        <div>
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" placeholder="Nome do produto" required />
         </div>
-      </section>
 
-      <section class="card">
-        <h2>Gráfico de Produtos por Categoria</h2>
-        <div class="grafico-box">
-          <canvas id="graficoProdutosCategoria"></canvas>
+        <div>
+          <label for="categoria">Categoria</label>
+          <input type="text" id="categoria" placeholder="Categoria" required />
         </div>
-      </section>
-    </section>
 
-    <section class="grid-2">
-      <section class="card">
-        <h2>Cadastrar Produto</h2>
-        <form id="produtoForm" class="form-grid" enctype="multipart/form-data">
-          <input type="text" id="produtoNome" placeholder="Nome" required />
-          <input type="text" id="produtoDescricao" placeholder="Descrição" />
-          <input type="number" id="produtoPreco" placeholder="Preço" step="0.01" required />
-          <input type="text" id="produtoCategoria" placeholder="Categoria" required />
-          <input type="number" id="produtoEstoque" placeholder="Estoque" />
-          <input type="file" id="produtoImagemArquivo" accept="image/*" />
-          <div class="preview-box">
-            <img id="previewCadastro" class="preview-imagem oculto" alt="Preview da imagem" />
-          </div>
-          <input type="text" id="produtoImagemUrl" placeholder="Ou URL da imagem" />
-          <button type="submit">Cadastrar produto</button>
-        </form>
-        <p id="produtoMensagem" class="mensagem"></p>
-      </section>
-
-      <section class="card">
-        <h2>Cadastrar Cliente</h2>
-        <form id="usuarioForm" class="form-grid">
-          <input type="text" id="usuarioNome" placeholder="Nome" required />
-          <input type="email" id="usuarioEmail" placeholder="Email" required />
-          <input type="password" id="usuarioSenha" placeholder="Senha" required />
-          <label class="checkbox">
-            <input type="checkbox" id="usuarioAdmin" />
-            É admin
-          </label>
-          <button type="submit">Cadastrar cliente</button>
-        </form>
-        <p id="usuarioMensagem" class="mensagem"></p>
-      </section>
-    </section>
-
-    <section class="grid-2">
-      <section class="card">
-        <div class="titulo-linha">
-          <h2>Produtos</h2>
-          <button onclick="listarProdutos()">Atualizar</button>
+        <div class="full">
+          <label for="descricao">Descrição</label>
+          <textarea id="descricao" placeholder="Descrição do produto"></textarea>
         </div>
-        <div id="listaProdutos" class="lista"></div>
-      </section>
 
-      <section class="card">
-        <div class="titulo-linha">
-          <h2>Pedidos</h2>
-          <button onclick="listarPedidos()">Atualizar</button>
+        <div>
+          <label for="preco">Preço</label>
+          <input type="number" id="preco" placeholder="Preço" step="0.01" required />
         </div>
-        <div id="listaPedidos" class="lista"></div>
-      </section>
+
+        <div>
+          <label for="estoque">Estoque</label>
+          <input type="number" id="estoque" placeholder="Estoque" min="0" required />
+        </div>
+
+        <div class="full">
+          <label for="imagem">URL da imagem</label>
+          <input type="text" id="imagem" placeholder="Cole a URL da imagem ou use o upload abaixo" />
+        </div>
+
+        <div class="full">
+          <label for="arquivo-imagem">Upload de imagem</label>
+          <input type="file" id="arquivo-imagem" accept="image/*" />
+          <small>A imagem será enviada para o servidor.</small>
+        </div>
+
+        <div class="full preview-area">
+          <img id="preview-imagem" src="" alt="Preview" class="preview-img oculto" />
+        </div>
+
+        <div class="full acoes-form">
+          <button type="submit" class="btn-primario" id="btn-salvar-produto">Salvar Produto</button>
+          <button type="button" class="btn-secundario" id="btn-cancelar-edicao">Cancelar Edição</button>
+        </div>
+      </form>
+
+      <p id="produto-msg" class="mensagem"></p>
     </section>
 
     <section class="card">
-      <div class="titulo-linha">
-        <h2>Clientes</h2>
-        <button onclick="listarUsuarios()">Atualizar</button>
+      <div class="card-topo">
+        <h2>Produtos Cadastrados</h2>
+        <button class="btn-secundario" onclick="carregarProdutos()">Atualizar</button>
       </div>
-      <div id="listaUsuarios" class="lista"></div>
+
+      <div class="tabela-responsiva">
+        <table>
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Nome</th>
+              <th>Categoria</th>
+              <th>Preço</th>
+              <th>Estoque</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-produtos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Criar Cliente</h2>
+
+      <form id="cliente-form" class="grid-form">
+        <div>
+          <label for="cliente-nome">Nome</label>
+          <input type="text" id="cliente-nome" placeholder="Nome do cliente" required />
+        </div>
+
+        <div>
+          <label for="cliente-email">E-mail</label>
+          <input type="email" id="cliente-email" placeholder="E-mail do cliente" required />
+        </div>
+
+        <div>
+          <label for="cliente-senha">Senha</label>
+          <input type="password" id="cliente-senha" placeholder="Senha" required />
+        </div>
+
+        <div class="full acoes-form">
+          <button type="submit" class="btn-primario">Criar Cliente</button>
+        </div>
+      </form>
+
+      <p id="cliente-msg" class="mensagem"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-topo">
+        <h2>Clientes</h2>
+        <button class="btn-secundario" onclick="carregarClientes()">Atualizar</button>
+      </div>
+
+      <div class="tabela-responsiva">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>Tipo</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-clientes"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 
-  <div id="modalProduto" class="modal oculto">
-    <div class="modal-conteudo">
-      <div class="titulo-linha">
-        <h2>Editar Produto</h2>
-        <button class="btn-danger" onclick="fecharModalProduto()">Fechar</button>
-      </div>
-
-      <form id="editarProdutoForm" class="form-grid" enctype="multipart/form-data">
-        <input type="hidden" id="editProdutoId" />
-
-        <input type="text" id="editProdutoNome" placeholder="Nome" required />
-        <input type="text" id="editProdutoDescricao" placeholder="Descrição" />
-        <input type="number" id="editProdutoPreco" placeholder="Preço" step="0.01" required />
-        <input type="text" id="editProdutoCategoria" placeholder="Categoria" required />
-        <input type="number" id="editProdutoEstoque" placeholder="Estoque" />
-        <input type="file" id="editProdutoImagemArquivo" accept="image/*" />
-
-        <div class="preview-box">
-          <img id="previewEdicao" class="preview-imagem oculto" alt="Preview da imagem" />
-        </div>
-
-        <input type="text" id="editProdutoImagemUrl" placeholder="Ou URL da imagem" />
-
-        <label class="checkbox">
-          <input type="checkbox" id="editRemoverImagem" />
-          Remover imagem atual
-        </label>
-
-        <button type="submit">Salvar alterações</button>
-      </form>
-
-      <p id="editProdutoMensagem" class="mensagem"></p>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

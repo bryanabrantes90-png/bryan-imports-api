@@ -3,94 +3,154 @@ import Produto from "../models/Produto.js";
 
 export const criarPedido = async (req, res) => {
   try {
-    const { produtos, endereco, telefone } = req.body;
+    const { itens, enderecoEntrega } = req.body;
 
-    if (!produtos || !Array.isArray(produtos) || produtos.length === 0) {
+    if (!itens || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).json({
-        message: "Informe os produtos do pedido"
+        message: "Informe pelo menos um item para o pedido"
       });
     }
 
-    if (!endereco || !telefone) {
-      return res.status(400).json({
-        message: "Endereço e telefone são obrigatórios"
-      });
-    }
+    const itensProcessados = [];
+    let valorTotal = 0;
 
-    let total = 0;
-    const produtosValidados = [];
+    for (const item of itens) {
+      const produto = await Produto.findById(item.produto);
 
-    for (const item of produtos) {
-      const produtoEncontrado = await Produto.findById(item.produto);
-
-      if (!produtoEncontrado) {
+      if (!produto) {
         return res.status(404).json({
           message: `Produto não encontrado: ${item.produto}`
         });
       }
 
-      const quantidade = Number(item.quantidade);
-
-      if (quantidade <= 0) {
+      if (!produto.ativo) {
         return res.status(400).json({
-          message: "A quantidade deve ser maior que 0"
+          message: `Produto inativo: ${produto.nome}`
         });
       }
 
-      total += produtoEncontrado.preco * quantidade;
+      const quantidade = Number(item.quantidade);
 
-      produtosValidados.push({
-        produto: produtoEncontrado._id,
-        quantidade
+      if (!quantidade || quantidade < 1) {
+        return res.status(400).json({
+          message: `Quantidade inválida para o produto ${produto.nome}`
+        });
+      }
+
+      if (produto.estoque < quantidade) {
+        return res.status(400).json({
+          message: `Estoque insuficiente para o produto ${produto.nome}`
+        });
+      }
+
+      const subtotal = produto.preco * quantidade;
+
+      itensProcessados.push({
+        produto: produto._id,
+        nome: produto.nome,
+        quantidade,
+        precoUnitario: produto.preco,
+        subtotal
       });
+
+      valorTotal += subtotal;
     }
 
-    const novoPedido = await Pedido.create({
-      usuario: req.usuario.id,
-      produtos: produtosValidados,
-      total,
-      endereco,
-      telefone
+    for (const item of itensProcessados) {
+      const produto = await Produto.findById(item.produto);
+      produto.estoque -= item.quantidade;
+      await produto.save();
+    }
+
+    const pedido = await Pedido.create({
+      usuario: req.usuario._id,
+      itens: itensProcessados,
+      valorTotal,
+      enderecoEntrega: enderecoEntrega || ""
     });
 
-    const pedidoCompleto = await Pedido.findById(novoPedido._id)
+    const pedidoCompleto = await Pedido.findById(pedido._id)
       .populate("usuario", "nome email")
-      .populate("produtos.produto", "nome preco categoria imagem");
+      .populate("itens.produto", "nome imagem");
 
     res.status(201).json({
       message: "Pedido criado com sucesso",
       pedido: pedidoCompleto
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Erro ao criar pedido",
+      error: error.message
+    });
   }
 };
 
 export const listarPedidos = async (req, res) => {
   try {
-    const filtro = req.usuario.isAdmin ? {} : { usuario: req.usuario.id };
-
-    const pedidos = await Pedido.find(filtro)
-      .populate("usuario", "nome email")
-      .populate("produtos.produto", "nome preco categoria imagem")
+    const pedidos = await Pedido.find()
+      .populate("usuario", "nome email tipo")
+      .populate("itens.produto", "nome imagem")
       .sort({ createdAt: -1 });
 
     res.status(200).json(pedidos);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Erro ao listar pedidos",
+      error: error.message
+    });
+  }
+};
+
+export const listarMeusPedidos = async (req, res) => {
+  try {
+    const pedidos = await Pedido.find({ usuario: req.usuario._id })
+      .populate("itens.produto", "nome imagem")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(pedidos);
+  } catch (error) {
+    res.status(500).json({
+      message: "Erro ao listar seus pedidos",
+      error: error.message
+    });
+  }
+};
+
+export const buscarPedidoPorId = async (req, res) => {
+  try {
+    const pedido = await Pedido.findById(req.params.id)
+      .populate("usuario", "nome email tipo")
+      .populate("itens.produto", "nome imagem");
+
+    if (!pedido) {
+      return res.status(404).json({ message: "Pedido não encontrado" });
+    }
+
+    const ehDono = pedido.usuario._id.toString() === req.usuario._id.toString();
+    const ehAdmin = req.usuario.tipo === "admin";
+
+    if (!ehDono && !ehAdmin) {
+      return res.status(403).json({
+        message: "Acesso negado a este pedido"
+      });
+    }
+
+    res.status(200).json(pedido);
+  } catch (error) {
+    res.status(500).json({
+      message: "Erro ao buscar pedido",
+      error: error.message
+    });
   }
 };
 
 export const atualizarStatusPedido = async (req, res) => {
   try {
     const { status } = req.body;
-
-    const statusPermitidos = ["pendente", "aprovado", "enviado", "entregue"];
+    const statusPermitidos = ["pendente", "pago", "enviado", "entregue", "cancelado"];
 
     if (!statusPermitidos.includes(status)) {
-      return res.status(400).json({
-        message: "Status inválido"
-      });
+      return res.status(400).json({ message: "Status inválido" });
     }
 
     const pedido = await Pedido.findById(req.params.id);
@@ -102,15 +162,14 @@ export const atualizarStatusPedido = async (req, res) => {
     pedido.status = status;
     await pedido.save();
 
-    const pedidoAtualizado = await Pedido.findById(pedido._id)
-      .populate("usuario", "nome email")
-      .populate("produtos.produto", "nome preco categoria imagem");
-
     res.status(200).json({
       message: "Status do pedido atualizado com sucesso",
-      pedido: pedidoAtualizado
+      pedido
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Erro ao atualizar status do pedido",
+      error: error.message
+    });
   }
 };

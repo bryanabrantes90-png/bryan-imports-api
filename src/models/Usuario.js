@@ -4,23 +4,30 @@ const usuarioSchema = new mongoose.Schema(
   {
     nome: {
       type: String,
-      required: [true, "O nome é obrigatório"]
+      required: [true, "O nome é obrigatório"],
+      trim: true
     },
     email: {
       type: String,
-      required: [true, "O email é obrigatório"],
-      unique: true
+      required: [true, "O e-mail é obrigatório"],
+      unique: true,
+      trim: true,
+      lowercase: true
     },
     senha: {
       type: String,
-      required: [true, "A senha é obrigatória"]
+      required: [true, "A senha é obrigatória"],
+      minlength: 6
     },
-    isAdmin: {
-      type: Boolean,
-      default: false
+    tipo: {
+      type: String,
+      enum: ["cliente", "admin"],
+      default: "cliente"
     }
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
 
 const Usuario = mongoose.model("Usuario", usuarioSchema);

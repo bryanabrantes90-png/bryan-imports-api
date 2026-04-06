@@ -5,8 +5,8 @@ import { fileURLToPath } from "url";
 
 import authRoutes from "./routes/authRoutes.js";
 import produtoRoutes from "./routes/produtoRoutes.js";
-import usuarioRoutes from "./routes/usuarioRoutes.js";
 import pedidoRoutes from "./routes/pedidoRoutes.js";
+import usuarioRoutes from "./routes/usuarioRoutes.js";
 
 const app = express();
 
@@ -19,21 +19,23 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, "../public")));
 
-app.use("/auth", authRoutes);
-app.use("/produtos", produtoRoutes);
-app.use("/usuarios", usuarioRoutes);
-app.use("/pedidos", pedidoRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/produtos", produtoRoutes);
+app.use("/api/usuarios", usuarioRoutes);
+app.use("/api/pedidos", pedidoRoutes);
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public/login.html"));
+app.use((req, res) => {
+  res.status(404).json({ message: "Rota não encontrada" });
 });
 
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public/admin.html"));
+app.use((error, req, res, next) => {
+  res.status(500).json({
+    message: error.message || "Erro interno do servidor"
+  });
 });
 
 export default app;

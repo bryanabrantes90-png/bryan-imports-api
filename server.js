@@ -1,21 +1,14 @@
 import dotenv from "dotenv";
-dotenv.config();
-
 import app from "./src/app.js";
 import connectDB from "./src/config/db.js";
 
-const PORT = process.env.PORT || 3001;
+dotenv.config();
 
-const iniciarServidor = async () => {
-  try {
-    await connectDB();
+const PORT = process.env.PORT || 3000;
+const HOST = "0.0.0.0";
 
-    app.listen(PORT, () => {
-      console.log(`Servidor rodando em http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error("Erro ao iniciar servidor:", error.message);
-  }
-};
+await connectDB();
 
-iniciarServidor();
+app.listen(PORT, HOST, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
+});
