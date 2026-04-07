@@ -31,7 +31,11 @@ form.addEventListener("submit", async (e) => {
     mensagem.style.color = "green";
 
     setTimeout(() => {
-      window.location.href = "admin.html";
+      if (dados.usuario.tipo === "admin") {
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "index.html";
+      }
     }, 1000);
   } catch (error) {
     mensagem.textContent = "Erro ao conectar com o servidor.";

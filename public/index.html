@@ -3,32 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bryan Imports</title>
+  <title>Bryan Imports Premium </title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topo">
     <div class="container topo-conteudo">
-      <h1>Bryan Imports</h1>
+      <div class="marca">
+        <div class="logo">BI</div>
+        <div>
+          <h1>Bryan Imports</h1>
+          <p class="submarca">Loja premium</p>
+        </div>
+      </div>
+
       <nav class="menu">
         <a href="index.html">Loja</a>
+        <a href="pedidos.html">Meus pedidos</a>
         <a href="login.html">Login</a>
         <a href="admin.html">Admin</a>
+
+        <button class="btn-carrinho-topo" id="btn-abrir-carrinho" type="button">
+          Carrinho
+          <span class="badge-carrinho" id="badge-carrinho">0</span>
+        </button>
       </nav>
     </div>
   </header>
 
   <main class="container">
-    <section class="hero">
-      <h2>Bem-vindo à loja</h2>
-      <p>Produtos organizados para celular, tablet e computador.</p>
+    <section class="hero-premium">
+      <div class="hero-texto">
+        <span class="tag">Premium </span>
+        <h2>Compre com estilo e acompanhe seus pedidos</h2>
+        <p>
+          Loja moderna com o que você pode comprar, acompanhar seus pedidos e muito mais. Tudo isso com um design responsivo e fácil de usar.
+        </p>
+        <div class="hero-botoes">
+          <a href="#produtos" class="btn btn-primario">Ver produtos</a>
+          <a href="pedidos.html" class="btn btn-secundario">Meus pedidos</a>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <h3>Recursos premium</h3>
+        <ul>
+          <li>Carrinho completo</li>
+          <li>Checkout moderno</li>
+          <li>Meus pedidos</li>
+          <li>Responsivo</li>
+        </ul>
+      </div>
     </section>
 
-    <section>
-      <h2 class="titulo-secao">Produtos</h2>
+    <section class="barra-controles" id="produtos">
+      <div class="campo-busca">
+        <input type="text" id="busca" placeholder="Buscar produto pelo nome..." />
+      </div>
+
+      <div class="campo-filtro">
+        <select id="filtro-categoria">
+          <option value="">Todas as categorias</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="secao-produtos">
+      <div class="secao-topo">
+        <h2>Produtos</h2>
+        <p id="contador-produtos">Carregando...</p>
+      </div>
+
       <div id="lista-produtos" class="grid-produtos"></div>
     </section>
   </main>
+
+  <div class="overlay-carrinho" id="overlay-carrinho"></div>
+
+  <aside class="carrinho-lateral" id="carrinho-lateral">
+    <div class="carrinho-topo">
+      <h2>Checkout</h2>
+      <button type="button" class="btn-fechar-carrinho" id="btn-fechar-carrinho">×</button>
+    </div>
+
+    <div class="checkout-bloco">
+      <h3>Seus itens</h3>
+      <div class="carrinho-conteudo" id="carrinho-itens"></div>
+    </div>
+
+    <div class="checkout-bloco">
+      <h3>Entrega</h3>
+      <label for="endereco-entrega">Endereço</label>
+      <textarea
+        id="endereco-entrega"
+        placeholder="Rua, número, bairro, cidade..."
+      ></textarea>
+    </div>
+
+    <div class="checkout-bloco">
+      <h3>Resumo</h3>
+
+      <div class="linha-resumo">
+        <span>Subtotal</span>
+        <strong id="checkout-subtotal">R$ 0,00</strong>
+      </div>
+
+      <div class="linha-resumo">
+        <span>Frete</span>
+        <strong id="checkout-frete">R$ 0,00</strong>
+      </div>
+
+      <div class="linha-resumo total">
+        <span>Total</span>
+        <strong id="carrinho-total">R$ 0,00</strong>
+      </div>
+
+      <div class="acoes-carrinho">
+        <button type="button" class="btn btn-secundario" id="btn-limpar-carrinho">
+          Limpar
+        </button>
+        <button type="button" class="btn btn-primario" id="btn-finalizar-pedido">
+          Finalizar pedido
+        </button>
+      </div>
+
+      <p id="mensagem-carrinho" class="mensagem-carrinho"></p>
+    </div>
+  </aside>
 
   <script src="script.js"></script>
 </body>

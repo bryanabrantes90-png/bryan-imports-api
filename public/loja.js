@@ -206,12 +206,18 @@ document.getElementById("pedidoForm").addEventListener("submit", async (e) => {
     return;
   }
 
+  const buscaInput = document.getElementById("busca");
+
+buscaInput.addEventListener("input", () => {
+  carregarProdutos(buscaInput.value);
+});
+
   mensagem.textContent = "Pedido realizado com sucesso.";
   limparCarrinho();
   document.getElementById("pedidoForm").reset();
   listarPedidos();
 });
-
+  
 renderizarCarrinho();
 listarProdutos();
 listarPedidos();
