@@ -1,9 +1,8 @@
 {
   "name": "bryan-imports-api",
   "version": "1.0.0",
-  "description": "Sistema completo da loja Bryan Imports",
-  "main": "server.js",
   "type": "module",
+  "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js"

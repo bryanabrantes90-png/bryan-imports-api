@@ -21,8 +21,8 @@ app.use(express.static(path.join(__dirname, "../public")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/produtos", produtoRoutes);
-app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/pedidos", pedidoRoutes);
+app.use("/api/usuarios", usuarioRoutes);
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
