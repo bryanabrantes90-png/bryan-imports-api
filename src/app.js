@@ -33,6 +33,7 @@ app.use((req, res) => {
 });
 
 app.use((error, req, res, next) => {
+  console.error("Erro no app:", error);
   res.status(500).json({
     message: error.message || "Erro interno do servidor"
   });
