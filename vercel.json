@@ -3,6 +3,15 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/$1" }
+    { "source": "/login.html", "destination": "/login.html" },
+    { "source": "/admin.html", "destination": "/admin.html" },
+    { "source": "/pedidos.html", "destination": "/pedidos.html" },
+    { "source": "/style.css", "destination": "/style.css" },
+    { "source": "/login.css", "destination": "/login.css" },
+    { "source": "/admin.css", "destination": "/admin.css" },
+    { "source": "/script.js", "destination": "/script.js" },
+    { "source": "/login.js", "destination": "/login.js" },
+    { "source": "/admin.js", "destination": "/admin.js" },
+    { "source": "/pedidos.js", "destination": "/pedidos.js" }
   ]
 }

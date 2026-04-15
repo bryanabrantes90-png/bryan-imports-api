@@ -15,7 +15,6 @@ const descricaoInput = document.getElementById("descricao");
 const precoInput = document.getElementById("preco");
 const estoqueInput = document.getElementById("estoque");
 const imagemInput = document.getElementById("imagem");
-const arquivoImagemInput = document.getElementById("arquivo-imagem");
 const previewImagem = document.getElementById("preview-imagem");
 
 const produtoMsg = document.getElementById("produto-msg");
@@ -51,37 +50,17 @@ function montarUrlImagem(imagem) {
     return "https://via.placeholder.com/120x120?text=Sem+Imagem";
   }
 
-  const valor = imagem.trim();
-
-  if (valor.startsWith("http://") || valor.startsWith("https://")) {
-    return valor;
-  }
-
-  if (valor.startsWith("/uploads/")) {
-    return valor;
-  }
-
-  if (valor.startsWith("uploads/")) {
-    return `/${valor}`;
-  }
-
-  if (valor.startsWith("/")) {
-    return valor;
-  }
-
-  return valor;
+  return imagem.trim();
 }
 
 function setPreviewImagem(src) {
-  const url = montarUrlImagem(src);
-
   if (!src || src.trim() === "") {
     previewImagem.src = "";
     previewImagem.classList.add("oculto");
     return;
   }
 
-  previewImagem.src = url;
+  previewImagem.src = montarUrlImagem(src);
   previewImagem.classList.remove("oculto");
 }
 
@@ -89,47 +68,9 @@ function limparFormularioProduto() {
   produtoForm.reset();
   produtoIdInput.value = "";
   btnSalvarProduto.textContent = "Salvar Produto";
-  arquivoImagemInput.value = "";
   setPreviewImagem("");
   limparMensagem(produtoMsg);
 }
-
-async function fazerUploadImagem(arquivo) {
-  const formData = new FormData();
-  formData.append("imagem", arquivo);
-
-  const resposta = await fetch("/api/produtos/upload/imagem", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
-    body: formData
-  });
-
-  const dados = await resposta.json();
-
-  if (!resposta.ok) {
-    throw new Error(dados.message || "Erro ao enviar imagem");
-  }
-
-  return dados.imagem;
-}
-
-arquivoImagemInput.addEventListener("change", async (event) => {
-  const arquivo = event.target.files[0];
-  if (!arquivo) return;
-
-  try {
-    mostrarMensagem(produtoMsg, "Enviando imagem...", "#374151");
-    const caminhoImagem = await fazerUploadImagem(arquivo);
-    imagemInput.value = caminhoImagem;
-    setPreviewImagem(caminhoImagem);
-    mostrarMensagem(produtoMsg, "Imagem enviada com sucesso!", "green");
-  } catch (error) {
-    mostrarMensagem(produtoMsg, error.message, "red");
-    console.error(error);
-  }
-});
 
 imagemInput.addEventListener("input", () => {
   setPreviewImagem(imagemInput.value.trim());
@@ -205,7 +146,6 @@ function preencherFormularioEdicao(produto) {
   precoInput.value = produto.preco ?? "";
   estoqueInput.value = produto.estoque ?? 0;
   imagemInput.value = produto.imagem || "";
-  arquivoImagemInput.value = "";
   setPreviewImagem(produto.imagem || "");
   btnSalvarProduto.textContent = "Atualizar Produto";
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -368,3 +308,8 @@ clienteForm.addEventListener("submit", async (e) => {
 
 carregarProdutos();
 carregarClientes();
+
+window.carregarProdutos = carregarProdutos;
+window.carregarClientes = carregarClientes;
+window.logout = logout;
+window.irParaLoja = irParaLoja;

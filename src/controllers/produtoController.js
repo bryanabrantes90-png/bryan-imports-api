@@ -3,11 +3,15 @@ import Produto from "../models/Produto.js";
 export const listarProdutos = async (req, res) => {
   try {
     const { nome, categoria } = req.query;
-
     const filtro = { ativo: true };
 
-    if (nome) filtro.nome = { $regex: nome, $options: "i" };
-    if (categoria) filtro.categoria = { $regex: categoria, $options: "i" };
+    if (nome) {
+      filtro.nome = { $regex: nome, $options: "i" };
+    }
+
+    if (categoria) {
+      filtro.categoria = { $regex: categoria, $options: "i" };
+    }
 
     const produtos = await Produto.find(filtro).sort({ createdAt: -1 });
 
@@ -47,14 +51,6 @@ export const criarProduto = async (req, res) => {
       });
     }
 
-    if (Number(preco) < 0) {
-      return res.status(400).json({ message: "O preço não pode ser negativo" });
-    }
-
-    if (estoque !== undefined && Number(estoque) < 0) {
-      return res.status(400).json({ message: "O estoque não pode ser negativo" });
-    }
-
     const novoProduto = await Produto.create({
       nome,
       descricao: descricao || "",
@@ -85,14 +81,6 @@ export const atualizarProduto = async (req, res) => {
 
     if (!produto) {
       return res.status(404).json({ message: "Produto não encontrado" });
-    }
-
-    if (preco !== undefined && Number(preco) < 0) {
-      return res.status(400).json({ message: "O preço não pode ser negativo" });
-    }
-
-    if (estoque !== undefined && Number(estoque) < 0) {
-      return res.status(400).json({ message: "O estoque não pode ser negativo" });
     }
 
     produto.nome = nome ?? produto.nome;
@@ -133,26 +121,6 @@ export const deletarProduto = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Erro ao remover produto",
-      error: error.message
-    });
-  }
-};
-
-export const uploadImagemProduto = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "Nenhuma imagem enviada" });
-    }
-
-    const urlImagem = `/uploads/${req.file.filename}`;
-
-    res.status(200).json({
-      message: "Imagem enviada com sucesso",
-      imagem: urlImagem
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Erro ao fazer upload da imagem",
       error: error.message
     });
   }

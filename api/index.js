@@ -8,11 +8,12 @@ export default async function handler(req, res) {
     if (!isConnected) {
       await connectDB();
       isConnected = true;
+      console.log("Banco conectado na Vercel.");
     }
 
     return app(req, res);
   } catch (error) {
-    console.error("Erro na função da Vercel:", error);
+    console.error("Erro na function da Vercel:", error);
     return res.status(500).json({
       message: "Erro interno do servidor",
       error: error.message
